@@ -20,7 +20,16 @@ jobs:
           script: |
             set -e
 
+            echo "Connected SSH user:"
+            whoami
+
+            echo "Configuring Git safe directory..."
+            git config --global --add safe.directory /var/www/express-app/node-app
+
             cd /var/www/express-app/node-app
+
+            echo "Checking repository ownership..."
+            git status --short
 
             echo "Pulling latest code..."
             git pull origin main
@@ -28,12 +37,12 @@ jobs:
             echo "Installing dependencies..."
             npm install
 
-            echo "Checking PM2..."
             if ! command -v pm2 >/dev/null 2>&1; then
+              echo "Installing PM2..."
               sudo npm install -g pm2
             fi
 
-            echo "Starting or restarting application..."
+            echo "Restarting Node.js application..."
             if pm2 describe express-app >/dev/null 2>&1; then
               pm2 restart express-app --update-env
             else
@@ -43,7 +52,10 @@ jobs:
             pm2 save
 
             echo "Testing application on port 8000..."
-            curl --retry 5 --retry-delay 2 --retry-connrefused \
+            curl --retry 5 \
+              --retry-delay 2 \
+              --retry-connrefused \
               -fsS http://127.0.0.1:8000/
 
+            echo ""
             echo "Deployment successful!"
