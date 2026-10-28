@@ -20,29 +20,35 @@ jobs:
           script: |
             set -e
 
-            echo "Connected SSH user:"
+            echo "========== SSH USER CHECK =========="
             whoami
+            id
 
-            echo "Configuring Git safe directory..."
+            echo "========== CHECKING REPOSITORY =========="
+            ls -ld /var/www/express-app/node-app
+            ls -ld /var/www/express-app/node-app/.git
+            ls -l /var/www/express-app/node-app/.git/FETCH_HEAD
+
+            echo "========== CONFIGURING GIT =========="
             git config --global --add safe.directory /var/www/express-app/node-app
 
             cd /var/www/express-app/node-app
 
-            echo "Checking repository ownership..."
+            echo "========== CHECKING GIT STATUS =========="
             git status --short
 
-            echo "Pulling latest code..."
+            echo "========== PULLING LATEST CODE =========="
             git pull origin main
 
-            echo "Installing dependencies..."
+            echo "========== INSTALLING DEPENDENCIES =========="
             npm install
 
+            echo "========== CHECKING PM2 =========="
             if ! command -v pm2 >/dev/null 2>&1; then
-              echo "Installing PM2..."
               sudo npm install -g pm2
             fi
 
-            echo "Restarting Node.js application..."
+            echo "========== RESTARTING APPLICATION =========="
             if pm2 describe express-app >/dev/null 2>&1; then
               pm2 restart express-app --update-env
             else
@@ -51,11 +57,11 @@ jobs:
 
             pm2 save
 
-            echo "Testing application on port 8000..."
+            echo "========== TESTING APPLICATION =========="
             curl --retry 5 \
               --retry-delay 2 \
               --retry-connrefused \
               -fsS http://127.0.0.1:8000/
 
             echo ""
-            echo "Deployment successful!"
+            echo "========== DEPLOYMENT SUCCESSFUL =========="
